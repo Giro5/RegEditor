@@ -3,6 +3,7 @@ from winreg import *
 #import winreg
 from tkinter import messagebox
 import tkinter.ttk as ttk
+import winsound
 
 hkeys = [HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE, HKEY_USERS, HKEY_CURRENT_CONFIG]
 keysStr = ["HKEY_CLASSES_ROOT", "HKEY_CURRENT_USER", "HKEY_LOCAL_MACHINE", "HKEY_USERS", "HKEY_CURRENT_CONFIG"]
@@ -18,7 +19,7 @@ data = []
 
 root = Tk()
 root.title("RegEditor")
-root.geometry("1000x550")
+root.geometry("1000x550+300+200")
 
 TextPath = StringVar(root)
 TextPath.set(path)
@@ -55,8 +56,41 @@ scrolltable = Scrollbar(mainFrame, command = table.yview)
 table.configure(yscrollcommand = scrolltable.set)
 scrolltable.pack(side = "right", fill = "y")
 
+#table.insert("", END, values = (1, 2, 3))
+
 for i in range(len(hkeys)):
     KeysListbox.insert(END, keysStr[i])
+
+def RefreshKey():
+    global path, key
+    ways = path.split("\\")
+    print(ways)
+    curindex = 5
+    if any(ways[0] == j for j in keysStr):
+        for i in range(len(keysStr)):
+            if keysStr[i] == ways[0]: break
+        curindex = i
+    else:
+        print("_Trash into the entrybox_Rename")
+        path = curpath
+        TextPath.set(path)
+        Follow()
+        return
+    print(curindex)
+    briefly = ""
+    if len(ways) > 1:
+        briefly = ways[1]
+        for j in range(2, len(ways)):
+            briefly += "\\" + ways[j]
+    try:
+        key = OpenKey(hkeys[curindex], briefly, 0, KEY_ALL_ACCESS)
+    except BaseException:
+        print("_The key can't opened_Rename")
+        path = curpath
+        TextPath.set(path)
+        Follow()
+        return
+    return
 
 def GetIn():
     global path
@@ -95,36 +129,37 @@ def Back():
     Follow()
 
 def Follow():
-    global path, curpath
+    global path, curpath, key
     path = TextPath.get()
     print("\n_Follow_\n" + path)
     if path != "":
-        ways = path.split("\\")
-        print(ways)
-        curindex = 5
-        if any(ways[0] == j for j in keysStr):
-            for i in range(len(keysStr)):
-                if keysStr[i] == ways[0]: break
-            curindex = i
-        else:
-            print("_Trash into the entrybox_Follow")
-            path = curpath
-            TextPath.set(path)
-            Follow()
-            return
-        print(curindex)
-        briefly = ""
-        if len(ways) > 1:
-            briefly = ways[1]
-            for j in range(2, len(ways)):
-                briefly += "\\" + ways[j]
-        try:
-            key = OpenKey(hkeys[curindex], briefly, 0, KEY_ALL_ACCESS)
-        except BaseException:
-            path = curpath
-            TextPath.set(path)
-            Follow()
-            return
+        RefreshKey()
+        #ways = path.split("\\")
+        #print(ways)
+        #curindex = 5
+        #if any(ways[0] == j for j in keysStr):
+        #    for i in range(len(keysStr)):
+        #        if keysStr[i] == ways[0]: break
+        #    curindex = i
+        #else:
+        #    print("_Trash into the entrybox_Follow")
+        #    path = curpath
+        #    TextPath.set(path)
+        #    Follow()
+        #    return
+        #print(curindex)
+        #briefly = ""
+        #if len(ways) > 1:
+        #    briefly = ways[1]
+        #    for j in range(2, len(ways)):
+        #        briefly += "\\" + ways[j]
+        #try:
+        #    key = OpenKey(hkeys[curindex], briefly, 0, KEY_ALL_ACCESS)
+        #except BaseException:
+        #    path = curpath
+        #    TextPath.set(path)
+        #    Follow()
+        #    return
         i = 0
         currentkey = []
         while True:
@@ -161,7 +196,7 @@ def Refresh():
     Follow()
 
 def Export():
-    global curpath
+    global curpath, path
     if curpath != "":
         ways = curpath.split("\\")
         curindex = 5
@@ -207,44 +242,75 @@ def Import():
     return
 
 def Rename():
-    global curpath, path
+    global key
     sel = table.index(table.focus())
-    print(sel, names[sel])
     if names[sel] != "" and names[sel] != None:
-        savename = names[sel]
-        #ways = path.split("\\")
-        #print(ways)
-        #curindex = 5
-        #if any(ways[0] == j for j in keysStr):
-        #    for i in range(len(keysStr)):
-        #        if keysStr[i] == ways[0]: break
-        #    curindex = i
-        #else:
-        #    print("_Trash into the entrybox_Rename")
-        #    path = curpath
-        #    TextPath.set(path)
-        #    Follow()
-        #    return
-        #print(curindex)
-        #briefly = ""
-        #if len(ways) > 1:
-        #    briefly = ways[1]
-        #    for j in range(2, len(ways)):
-        #        briefly += "\\" + ways[j]
-        #try:
-        #    key = OpenKey(hkeys[curindex], briefly, 0, KEY_ALL_ACCESS)
-        #except BaseException:
-        #    print("_The key can't opened_Rename")
-        #    path = curpath
-        #    TextPath.set(path)
-        #    Follow()
-        #    return
-
-    else: return
+        save = [names[sel], types[sel], data[sel]]
+        print(save, "\n", curpath)
+        child = Toplevel(root)
+        child.title("Rename key")
+        child.geometry("400x220+300+200")
+        child.resizable(False, False)
+        child.grab_set()
+        child.focus_set()
+        nameText = StringVar()
+        nameText.set(save[0])
+        infolabel = Label(child, text = "Enter new name:").place(x = 10, y = 18)
+        nameEntry = Entry(child, textvariable = nameText).place(x = 10, y = 40, width = 380, height = 20)
+        def OK():
+            global key
+            if save[0] != nameText.get() and nameText.get() != "":
+                DeleteValue(key, save[0])
+                SetValueEx(key, nameText.get(), 0, save[1], save[2])
+                Refresh()
+                child.destroy()
+                return
+            else:
+                child.destroy()
+                return
+        def Cancel():
+            child.destroy()
+        OKButton = Button(child, text = "OK", command = OK).place(x = 220, y = 190, width = 80, height = 20)
+        CancelButton = Button(child, text = "Cancel", command = Cancel).place(x = 310, y = 190, width = 80, height = 20)
+        child.mainloop()
+    else:
+       winsound.Beep(900, 250)
+       return
     
 
 def Modify():
-    return
+    global key
+    sel = table.index(table.focus())
+    save = [names[sel], types[sel], data[sel]]
+    child = Toplevel(root)
+    child.title("Edit data")
+    child.geometry("400x220+300+200")
+    child.resizable(False, False)
+    child.grab_set()
+    child.focus_set()
+    datatext = StringVar()
+    datatext.set(save[2])
+    nametext = StringVar()
+    nametext.set(save[0])
+    infolabel = Label(child, text = "Value name:").place(x = 10, y = 18)
+    nameEntry = Entry(child, textvariable = nametext, state = "disabled").place(x = 10, y = 40, width = 380, height = 20)
+    infolabel2 = Label(child, text = "Value data:").place(x = 10, y = 60)
+    nameEntry = Entry(child, textvariable = datatext).place(x = 10, y = 82, width = 380, height = 20)
+    def OK():
+        global key
+        if save[0] != datatext.get():
+            SetValueEx(key, save[0], 0 , save[1], datatext.get())
+            Refresh()
+            child.destroy()
+            return
+        else:
+            child.destroy()
+            return
+    def Cancel():
+        child.destroy()
+    OKButton = Button(child, text = "OK", command = OK).place(x = 220, y = 190, width = 80, height = 20)
+    CancelButton = Button(child, text = "Cancel", command = Cancel).place(x = 310, y = 190, width = 80, height = 20)
+    child.mainloop()
 
 def Delete():
     return
