@@ -8,8 +8,13 @@ hkeys = [HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE, HKEY_USERS, H
 keysStr = ["HKEY_CLASSES_ROOT", "HKEY_CURRENT_USER", "HKEY_LOCAL_MACHINE", "HKEY_USERS", "HKEY_CURRENT_CONFIG"]
 path = ""
 curpath = ""
+key = OpenKey(hkeys[0], "")
 
 RegTypes = ["REG_NONE","REG_SZ","REG_EXPAND_SZ","REG_BINARY","REG_DWORD","REG_DWORD_BIG_ENDIAN","REG_LINK","REG_MULTI_SZ","REG_RESOURCE_LIST","REG_FULL_RESOURCE_DESCRIPTOR","REG_RESOURCE_REQUIREMENTS_LIST","REG_QWORD"]
+
+names = []
+types = []
+data = []
 
 root = Tk()
 root.title("RegEditor")
@@ -43,6 +48,7 @@ table.config(columns = heading, displaycolumns = heading)
 for head in heading:
     table.heading(head, text = head, anchor = "w")
     table.column(head, anchor = "w")
+table.column("Type", width = 40)
 table.pack(expand = True, fill = "both", side = "left")
 
 scrolltable = Scrollbar(mainFrame, command = table.yview)
@@ -102,7 +108,7 @@ def Follow():
             curindex = i
         else:
             print("_Trash into the entrybox_Follow")
-            path = ""
+            path = curpath
             TextPath.set(path)
             Follow()
             return
@@ -126,9 +132,9 @@ def Follow():
             except: break
             i += 1
         j = 0
-        names = []
-        types = []
-        data = []
+        names.clear()
+        types.clear()
+        data.clear()
         while True:
             try:
                 names.append(EnumValue(key, j)[0])
@@ -201,9 +207,40 @@ def Import():
     return
 
 def Rename():
-    global curpath
-    sel = table.focus()
-    print(sel)
+    global curpath, path
+    sel = table.index(table.focus())
+    print(sel, names[sel])
+    if names[sel] != "" and names[sel] != None:
+        savename = names[sel]
+        #ways = path.split("\\")
+        #print(ways)
+        #curindex = 5
+        #if any(ways[0] == j for j in keysStr):
+        #    for i in range(len(keysStr)):
+        #        if keysStr[i] == ways[0]: break
+        #    curindex = i
+        #else:
+        #    print("_Trash into the entrybox_Rename")
+        #    path = curpath
+        #    TextPath.set(path)
+        #    Follow()
+        #    return
+        #print(curindex)
+        #briefly = ""
+        #if len(ways) > 1:
+        #    briefly = ways[1]
+        #    for j in range(2, len(ways)):
+        #        briefly += "\\" + ways[j]
+        #try:
+        #    key = OpenKey(hkeys[curindex], briefly, 0, KEY_ALL_ACCESS)
+        #except BaseException:
+        #    print("_The key can't opened_Rename")
+        #    path = curpath
+        #    TextPath.set(path)
+        #    Follow()
+        #    return
+
+    else: return
     
 
 def Modify():
