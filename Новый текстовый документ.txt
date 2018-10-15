@@ -1,0 +1,3 @@
+https://www.tutorialspoint.com/python/python_gui_programming.htm
+
+https://docs.python.org/3/library/winreg.html

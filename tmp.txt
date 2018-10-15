@@ -1,6 +1,39 @@
- height = 500,
- height = 500,
+#def ScrollName(*args):
+#    if ValueNameListbox.yview() != ValueTypeListbox.yview() or ValueNameListbox.yview() != ValueDataListbox.yview():
+#        ValueNameListbox.yview_moveto(args[0])
+#    MainScrollY.set(*args)
+#def ScrollType(*args):
+#    if ValueNameListbox.yview() != ValueTypeListbox.yview() or ValueTypeListbox.yview() != ValueDataListbox.yview():
+#        ValueTypeListbox.yview_moveto(args[0])
+#    MainScrollY.set(*args)
+#def ScrollData(*args):
+#    if ValueDataListbox.yview() != ValueTypeListbox.yview() or ValueNameListbox.yview() != ValueDataListbox.yview():
+#        ValueDataListbox.yview_moveto(args[0])
+#    MainScrollY.set(*args)
+#def MainYview(*args):
+#    ValueNameListbox.yview(*args)
+#    ValueTypeListbox.yview(*args)
+#    ValueDataListbox.yview(*args)
+
+#MainScrollY = Scrollbar(mainFrame)
+#MainScrollY.pack(side = "right", fill = "y")
+#MainScrollY.config(command = MainYview)
+
+#ValueNameListbox = Listbox(mainFrame, width = 50, yscrollcommand = ScrollName)
+#ValueNameListbox.pack(side = "left", fill = "y")
+
+#ValueTypeListbox = Listbox(mainFrame, width = 30, yscrollcommand = ScrollType)
+#ValueTypeListbox.pack(side = "left", fill = "y")
+
+#ValueDataListbox = Listbox(mainFrame, width = 1000, yscrollcommand = ScrollData)
+#ValueDataListbox.pack(side = "left", fill = "both")
 
 
-for i in keys:
-    KeysListbox.insert(END, keysStr[i - 18446744071562067968])
+_Follow_
+#ValueNameListbox.delete(0, END)
+        #ValueTypeListbox.delete(0, END)
+        #ValueDataListbox.delete(0, END)
+
+#ValueNameListbox.insert(END, names[j] if names[j] != "" else "(Default)")
+            #ValueTypeListbox.insert(END, RegTypes[types[j]])
+            #ValueDataListbox.insert(END, str(data[j]) if data[j] != None else "(Value not set)")
