@@ -2,6 +2,7 @@ from tkinter import *
 from winreg import *
 #import winreg
 from tkinter import messagebox
+#from tkinter.messagebox import *
 import tkinter.ttk as ttk
 import winsound
 
@@ -223,7 +224,6 @@ def Export():
             Follow()
             return
 
-        import os, sys
         import win32api
         import win32security
         privflag = win32security.TOKEN_ADJUST_PRIVILEGES | win32security.TOKEN_QUERY
@@ -277,10 +277,10 @@ def Rename():
        winsound.Beep(900, 250)
        return
     
-
 def Modify():
     global key
-    sel = table.index(table.focus())
+    try: sel = table.index(table.focus())
+    except: return
     save = [names[sel], types[sel], data[sel]]
     child = Toplevel(root)
     child.title("Edit data")
@@ -313,6 +313,28 @@ def Modify():
     child.mainloop()
 
 def Delete():
+    print(root.focus_get())
+    if str(root.focus_get()).split(".!")[len(str(root.focus_get()).split(".!")) - 1] == "treeview":
+        try: sel = table.index(table.focus())
+        except: return
+        save = [names[sel], types[sel], data[sel]]
+        answer = messagebox.askyesno("Confirmation of deletion", "Are you sure?")
+        print(answer)
+        if answer:
+            DeleteValue(key, save[0])
+            Refresh()
+    elif str(root.focus_get()).split(".!")[len(str(root.focus_get()).split(".!")) - 1] == "listbox":
+        try: sel = KeysListbox.curselection()[0]
+        except: return
+        selStr = KeysListbox.get(sel)
+        answer = messagebox.askyesno("Confirmation of deletion", "Are you sure?")
+        print(answer)
+        if answer:
+            DeleteKey(key, selStr)
+            Refresh()
+    else:
+        winsound.Beep(900, 250)
+        return
     return
 
 def Create():
@@ -339,6 +361,14 @@ FileItem.add_cascade(label = "Exit", command = root.destroy)
 
 EditItem = Menu(MainMenu, tearoff = 0)
 MainMenu.add_cascade(label = "Edit", menu = EditItem)
+NewItem = Menu(EditItem, tearoff = 0)
+""" """
+EditItem.add_cascade(label = "New", menu = NewItem)
+EditItem.add_separator()
+EditItem.add_cascade(label = "Delete", command = Delete)
+EditItem.add_cascade(label = "Rename", command = Rename)
+EditItem.add_separator()
+EditItem.add_cascade(label = "Copy key")
 
 ViewItem = Menu(MainMenu, tearoff = 0)
 MainMenu.add_cascade(label = "View", menu = ViewItem,)
