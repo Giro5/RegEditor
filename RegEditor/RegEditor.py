@@ -14,6 +14,7 @@ key = OpenKey(hkeys[0], "")
 
 RegTypes = ["REG_NONE","REG_SZ","REG_EXPAND_SZ","REG_BINARY","REG_DWORD","REG_DWORD_BIG_ENDIAN","REG_LINK","REG_MULTI_SZ","REG_RESOURCE_LIST","REG_FULL_RESOURCE_DESCRIPTOR","REG_RESOURCE_REQUIREMENTS_LIST","REG_QWORD"]
 
+currentkeys = ["HKEY_CLASSES_ROOT", "HKEY_CURRENT_USER", "HKEY_LOCAL_MACHINE", "HKEY_USERS", "HKEY_CURRENT_CONFIG"]
 names = []
 types = []
 data = []
@@ -24,7 +25,8 @@ root.geometry("1000x550+300+200")
 
 TextPath = StringVar(root)
 TextPath.set(path)
-EntryPath = Entry(root, textvariable = TextPath).pack(side = "top", fill = "both")
+EntryPath = Entry(root, textvariable = TextPath)
+EntryPath.pack(side = "top", fill = "both")
 
 treeFrame = Frame(root,  width = 200, bg = "#b5b5b5")
 mainFrame = Frame(root,  width = 800, bg = "#cfcfcf")
@@ -40,6 +42,7 @@ TreeScrollX = Scrollbar(treeFrame, orient = HORIZONTAL)
 TreeScrollX.pack(side = "bottom", fill = "x")
 
 KeysListbox = Listbox(treeFrame, yscrollcommand = TreeScrollY.set, xscrollcommand = TreeScrollX.set, width = 30)
+
 KeysListbox.pack(side = "right" ,fill = "both")
 TreeScrollY.config(command = KeysListbox.yview)
 TreeScrollX.config(command = KeysListbox.xview)
@@ -57,13 +60,24 @@ scrolltable = Scrollbar(mainFrame, command = table.yview)
 table.configure(yscrollcommand = scrolltable.set)
 scrolltable.pack(side = "right", fill = "y")
 
-#table.insert("", END, values = (1, 2, 3))
+def changeFocusListbox(event):
+    table.delete(*table.get_children())
+    for j in range(len(names)):
+            table.insert("", END, values = (names[j] if names[j] != "" else "(Default)", RegTypes[types[j]], ConvertTypes(types[j], data[j])))
+KeysListbox.bind("<Button-1>", changeFocusListbox)
+
+def changeFocusTreeview(event):
+    changeFocusListbox("")
+    KeysListbox.delete(0, END)
+    for i in range(len(currentkeys)):
+            KeysListbox.insert(END, currentkeys[i])
+table.bind("<Button-1>", changeFocusTreeview)
 
 for i in range(len(hkeys)):
     KeysListbox.insert(END, keysStr[i])
 
 def RefreshKey():
-    global path, key
+    global path, key, currentkeys
     ways = path.split("\\")
     print(ways)
     curindex = 5
@@ -75,7 +89,7 @@ def RefreshKey():
         print("_Trash into the entrybox_Rename")
         path = curpath
         TextPath.set(path)
-        Follow()
+        Follow("")
         return
     print(curindex)
     briefly = ""
@@ -89,11 +103,11 @@ def RefreshKey():
         print("_The key can't opened_Rename")
         path = curpath
         TextPath.set(path)
-        Follow()
+        Follow("")
         return
     return
 
-def GetIn():
+def GetIn(event):
     global path
     try: sel = KeysListbox.curselection()[0]
     except : return
@@ -110,7 +124,9 @@ def GetIn():
         print("_Trash into the entrybox_GetIn")
         path = ""
     TextPath.set(path)
-    Follow()
+    Follow("")
+
+KeysListbox.bind("<Double-Button-1>", GetIn)
 
 def Back():
     global path
@@ -127,44 +143,74 @@ def Back():
         comppath = ""
     path = comppath
     TextPath.set(path)
-    Follow()
+    Follow("")
 
-def Follow():
-    global path, curpath, key
+def ConvertTypes(regtype, value):
+    if regtype == REG_NONE:
+        return "(zero-length binary value)"
+
+    elif regtype == REG_SZ:
+        if value == None:
+            return "(Value not set)"
+        return value
+
+    elif regtype == REG_EXPAND_SZ:
+        if value == None:
+            return "(Value not set)"
+        return str(value).replace("\\", "/")
+
+    elif regtype == REG_BINARY:
+        if value == None:
+            return "(zero-length binary value)"
+        return [(hex(i)[2:] if i != 0 else "00") for i in value]
+
+    elif regtype == REG_DWORD:
+        return (hex(value) if len(hex(value)) > 9 else "0x" + "0" * (10 - len(hex(value))) + hex(value)[2:]) + f" ({value})"
+
+    elif regtype == REG_DWORD_BIG_ENDIAN:
+        return ConvertTypes(REG_DWORD, value)
+
+    elif regtype == REG_LINK:
+        if value == None:
+            return "(Value not set)"
+        return value
+
+    elif regtype == REG_MULTI_SZ:
+        if len(value) > 0:
+            return " ".join(value)
+        return ""
+
+    elif regtype == REG_RESOURCE_LIST:
+        if value == None:
+            return "(Value not set)"
+        return value
+
+    elif regtype == REG_FULL_RESOURCE_DESCRIPTOR:
+        if value == None:
+            return "(Value not set)"
+        return value
+
+    elif regtype == REG_RESOURCE_REQUIREMENTS_LIST:
+        if value == None:
+            return "(Value not set)"
+        return value
+
+    elif regtype == REG_QWORD:
+        return ConvertTypes(REG_DWORD, value)
+
+    else:
+        raise TypeError
+
+def Follow(event):
+    global path, curpath, key, currentkeys
     path = TextPath.get()
     print("\n_Follow_\n" + path)
     if path != "":
         RefreshKey()
-        #ways = path.split("\\")
-        #print(ways)
-        #curindex = 5
-        #if any(ways[0] == j for j in keysStr):
-        #    for i in range(len(keysStr)):
-        #        if keysStr[i] == ways[0]: break
-        #    curindex = i
-        #else:
-        #    print("_Trash into the entrybox_Follow")
-        #    path = curpath
-        #    TextPath.set(path)
-        #    Follow()
-        #    return
-        #print(curindex)
-        #briefly = ""
-        #if len(ways) > 1:
-        #    briefly = ways[1]
-        #    for j in range(2, len(ways)):
-        #        briefly += "\\" + ways[j]
-        #try:
-        #    key = OpenKey(hkeys[curindex], briefly, 0, KEY_ALL_ACCESS)
-        #except BaseException:
-        #    path = curpath
-        #    TextPath.set(path)
-        #    Follow()
-        #    return
         i = 0
-        currentkey = []
+        currentkeys.clear()
         while True:
-            try: currentkey.append(EnumKey(key, i))
+            try: currentkeys.append(EnumKey(key, i))
             except: break
             i += 1
         j = 0
@@ -180,66 +226,39 @@ def Follow():
             j += 1
         KeysListbox.delete(0, END)
         table.delete(*table.get_children())
-        for i in range(len(currentkey)):
-            KeysListbox.insert(END, currentkey[i])
+        for i in range(len(currentkeys)):
+            KeysListbox.insert(END, currentkeys[i])
         for j in range(len(names)):
-            table.insert("", END, values = (names[j] if names[j] != "" else "(Default)", RegTypes[types[j]], str(data[j]) if data[j] != None else "(Value not set)"))
+            table.insert("", END, values = (names[j] if names[j] != "" else "(Default)", RegTypes[types[j]], ConvertTypes(types[j], data[j])))
     else:
+        currentkeys = ["HKEY_CLASSES_ROOT", "HKEY_CURRENT_USER", "HKEY_LOCAL_MACHINE", "HKEY_USERS", "HKEY_CURRENT_CONFIG"]
         KeysListbox.delete(0, END)
         for i in range(len(hkeys)):
             KeysListbox.insert(END, keysStr[i])
     curpath = path
 
-def Refresh():
+EntryPath.bind("<Return>", Follow)
+
+def Refresh(event):
     global path, curpath
     path = curpath
     TextPath.set(path)
-    Follow()
+    Follow("")
 
 def Export():
-    global curpath, path
-    if curpath != "":
-        ways = curpath.split("\\")
-        curindex = 5
-        if any(ways[0] == j for j in keysStr):
-            for i in range(len(keysStr)):
-                if keysStr[i] == ways[0]: break
-            curindex = i
-        else:
-            print("_Trash into the entrybox_Export")
-            path = ""
-            TextPath.set(path)
-            Follow()
-            return
-        briefly = ""
-        if len(ways) > 1:
-            briefly = ways[1]
-            for j in range(2, len(ways)):
-                briefly += "\\" + ways[j]
-        try:
-            key = OpenKey(hkeys[curindex], briefly, 0, KEY_ALL_ACCESS)
-        except BaseException:
-            path = curpath
-            TextPath.set(path)
-            Follow()
-            return
-
-        import win32api
-        import win32security
-        privflag = win32security.TOKEN_ADJUST_PRIVILEGES | win32security.TOKEN_QUERY
-        hToken = win32security.OpenProcessToken(win32api.GetCurrentProcess(), privflag)
-        privid = win32security.LookupPrivilegeValue(None, "SeBackupPrivilege")
-        win32security.AdjustTokenPrivileges(hToken, 0, [(privid, win32security.SE_PRIVILEGE_ENABLED)])
-
-        filepath = "reg.reg"
-        import os.path, os
-        if os.path.exists(filepath):
-            os.remove(filepath)
-        SaveKey(key, filepath)
-    else: return
+    global curpath
+    import subprocess
+    from tkinter import filedialog
+    filepath = filedialog.asksaveasfilename(filetypes = (("Registration Files", "*.reg"), ("All Files", ""))) + ".reg"
+    print(filepath)
+    subprocess.Popen(f"reg export {curpath} {filepath} /y /reg:64", shell = True)
 
 def Import():
-    return
+    import subprocess
+    from tkinter import filedialog
+    filepath = filedialog.askopenfilename(filetypes = (("Registration Files", "*.reg"), ("", "")))
+    print(filepath)
+    subprocess.Popen(f"reg import {filepath} /reg:64", shell = True)
 
 def Rename():
     global key
@@ -248,7 +267,7 @@ def Rename():
         save = [names[sel], types[sel], data[sel]]
         print(save, "\n", curpath)
         child = Toplevel(root)
-        child.title("Rename key")
+        child.title("Rename Key")
         child.geometry("400x220+300+200")
         child.resizable(False, False)
         child.grab_set()
@@ -262,7 +281,7 @@ def Rename():
             if save[0] != nameText.get() and nameText.get() != "":
                 DeleteValue(key, save[0])
                 SetValueEx(key, nameText.get(), 0, save[1], save[2])
-                Refresh()
+                Refresh("")
                 child.destroy()
                 return
             else:
@@ -283,24 +302,21 @@ def Modify():
     except: return
     save = [names[sel], types[sel], data[sel]]
     child = Toplevel(root)
-    child.title("Edit data")
+    child.title("Edit Data")
     child.geometry("400x220+300+200")
     child.resizable(False, False)
     child.grab_set()
     child.focus_set()
-    datatext = StringVar()
-    datatext.set(save[2])
-    nametext = StringVar()
-    nametext.set(save[0])
     infolabel = Label(child, text = "Value name:").place(x = 10, y = 18)
-    nameEntry = Entry(child, textvariable = nametext, state = "disabled").place(x = 10, y = 40, width = 380, height = 20)
+    nameEntry = Entry(child, textvariable = StringVar(value = save[0]), state = "disabled").place(x = 10, y = 40, width = 380, height = 20)
     infolabel2 = Label(child, text = "Value data:").place(x = 10, y = 60)
-    nameEntry = Entry(child, textvariable = datatext).place(x = 10, y = 82, width = 380, height = 20)
+    dataEntry = Entry(child, textvariable = StringVar(value = save[2]))
+    dataEntry.place(x = 10, y = 82, width = 380, height = 20)
     def OK():
         global key
-        if save[0] != datatext.get():
-            SetValueEx(key, save[0], 0 , save[1], datatext.get())
-            Refresh()
+        if save[0] != dataEntry.get():
+            SetValueEx(key, save[0], 0 , save[1], dataEntry.get())
+            Refresh("")
             child.destroy()
             return
         else:
@@ -315,6 +331,8 @@ def Modify():
 def Delete():
     print(root.focus_get())
     if str(root.focus_get()).split(".!")[len(str(root.focus_get()).split(".!")) - 1] == "treeview":
+        if table.focus() == "":
+            return
         try: sel = table.index(table.focus())
         except: return
         save = [names[sel], types[sel], data[sel]]
@@ -322,7 +340,6 @@ def Delete():
         print(answer)
         if answer:
             DeleteValue(key, save[0])
-            Refresh()
     elif str(root.focus_get()).split(".!")[len(str(root.focus_get()).split(".!")) - 1] == "listbox":
         try: sel = KeysListbox.curselection()[0]
         except: return
@@ -331,30 +348,35 @@ def Delete():
         print(answer)
         if answer:
             DeleteKey(key, selStr)
-            Refresh()
     else:
         winsound.Beep(900, 250)
-        return
-    return
+    Refresh("")
 
-def Create():
-    return
-
-
-getinButton = Button(buttonFrame, text = "Get In", command = GetIn).place(x = 5, y = 5, width = 60, height = 40)
-backButton = Button(buttonFrame, text = "Back", command = Back).place(x = 65, y = 5, width = 60, height = 40)
-followButton = Button(buttonFrame, text = "Follow", command = Follow).place(x = 125, y = 5, width = 60, height = 40)
-renameButton = Button(buttonFrame, text = "Rename", command = Rename).place(x = 205, y = 5, width = 60, height = 40)
-modifyButton = Button(buttonFrame, text = "Modify", command = Modify).place(x = 265, y = 5, width = 60, height = 40)
-deleteButton = Button(buttonFrame, text = "Delete", command = Delete).place(x = 325, y = 5, width = 60, height = 40)
-createButton = Button(buttonFrame, text = "Create", command = Create).place(x = 385, y = 5, width = 60, height = 40)
-
-
+def Create(regtype):
+    if regtype == "key":
+        i = 1
+        while True:
+            if any(f"New Key #{i}" == j for j in KeysListbox.get(0, END)): i += 1
+            else: break
+        newkey = CreateKey(key, f"New Key #{i}")
+        newkey.Close()
+    elif any(regtype == j for j in [1, 2, 3, 4, 7, 11]):
+        i = 1
+        while True:
+            if any(f"New Value #{i}" == j for j in [table.item(k)["values"][0] for k in table.get_children()]): i += 1
+            else: break
+        SetValueEx(key, f"New Value #{i}", 0, regtype, None)
+        Refresh("")
+        table.focus(table.get_children()[len(table.get_children()) - 1])
+        Rename()
+    else:
+        print("not found")
+    Refresh("")
 
 MainMenu = Menu(root)
 FileItem = Menu(MainMenu, tearoff = 0)
 MainMenu.add_cascade(label = "File", menu = FileItem)
-FileItem.add_cascade(label = "Import")
+FileItem.add_cascade(label = "Import", command = Import)
 FileItem.add_cascade(label = "Export", command = Export)
 FileItem.add_separator()
 FileItem.add_cascade(label = "Exit", command = root.destroy)
@@ -362,7 +384,14 @@ FileItem.add_cascade(label = "Exit", command = root.destroy)
 EditItem = Menu(MainMenu, tearoff = 0)
 MainMenu.add_cascade(label = "Edit", menu = EditItem)
 NewItem = Menu(EditItem, tearoff = 0)
-""" """
+NewItem.add_command(label = "Key", command = lambda: Create("key"))
+NewItem.add_separator()
+NewItem.add_cascade(label = "String Value", command = lambda: Create(REG_SZ))
+NewItem.add_cascade(label = "Binary Value", command = lambda: Create(REG_BINARY))
+NewItem.add_cascade(label = "DWORD (32-bit) Value", command = lambda: Create(REG_DWORD))
+NewItem.add_cascade(label = "QWORD (64-bit) Value", command = lambda: Create(REG_QWORD))
+NewItem.add_cascade(label = "Multi-String Value", command = lambda: Create(REG_MULTI_SZ))
+NewItem.add_cascade(label = "Expandable String Value", command = lambda: Create(REG_EXPAND_SZ))
 EditItem.add_cascade(label = "New", menu = NewItem)
 EditItem.add_separator()
 EditItem.add_cascade(label = "Delete", command = Delete)
@@ -371,8 +400,39 @@ EditItem.add_separator()
 EditItem.add_cascade(label = "Copy key")
 
 ViewItem = Menu(MainMenu, tearoff = 0)
-MainMenu.add_cascade(label = "View", menu = ViewItem,)
-ViewItem.add_cascade(label = "Refresh", command = Refresh)
+MainMenu.add_cascade(label = "View", menu = ViewItem)
+ViewItem.add_cascade(label = "Refresh            F5", command = lambda: Refresh(""))
+root.bind("<F5>", Refresh)
+
+getinButton = Button(buttonFrame, text = "Get In")
+getinButton.bind("<Button-1>", GetIn)
+getinButton.place(x = 5, y = 5, width = 60, height = 40)
+
+backButton = Button(buttonFrame, text = "Back", command = Back).place(x = 65, y = 5, width = 60, height = 40)
+
+followButton = Button(buttonFrame, text = "Follow")
+followButton.bind("<Button-1>", Follow)
+followButton.place(x = 125, y = 5, width = 60, height = 40)
+
+renameButton = Button(buttonFrame, text = "Rename", command = Rename).place(x = 205, y = 5, width = 60, height = 40)
+modifyButton = Button(buttonFrame, text = "Modify", command = Modify).place(x = 265, y = 5, width = 60, height = 40)
+deleteButton = Button(buttonFrame, text = "Delete", command = Delete).place(x = 325, y = 5, width = 60, height = 40)
+
+def TableDropDown(event):
+    print("focus the element", table.focus(), "|")
+    if table.focus() != "":
+        EditFocus = Menu(table, tearoff = 0)
+        EditFocus.add_cascade(label = "Modify...", command = Modify)
+        EditFocus.add_separator()
+        EditFocus.add_cascade(label = "Delete", command = Delete)
+        EditFocus.add_cascade(label = "Rename", command = Rename)
+        EditFocus.post(event.x_root, event.y_root)
+    else:
+        NoFocus = Menu(table, tearoff = 0)
+        NoFocus.add_cascade(label = "New           ", menu = NewItem)
+        NoFocus.post(event.x_root, event.y_root)
+    return
+table.bind("<Button-3>", TableDropDown)
 
 root.config(menu = MainMenu)
 
